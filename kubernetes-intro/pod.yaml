@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hw-intro
+  namespace: homework
+  labels:
+    name: hw-intro
+spec:
+  containers:
+  - name: web
+    image: busybox:1.35
+    ports:
+    - containerPort: 8000
+    volumeMounts:
+    - mountPath: /homework
+      name: www-volume
+    command: ["busybox"]
+    args: ["httpd" , "-f",  "-p", "8000", "-h", "/homework"]    
+    lifecycle:
+      preStop:
+        exec:
+          command: ["sh","-c","rm -rf /homework/index.html"]
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.35
+    command: ['sh', '-c', 'echo "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Title</title></head><body>Hello, homework1</body></html>" > /init/index.html']  
+    volumeMounts:
+    - mountPath: /init
+      name: www-volume
+  volumes:
+  - name: www-volume
+    emptyDir:
+      sizeLimit: 5Mi  
