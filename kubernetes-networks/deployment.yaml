@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: homework
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.35
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - mountPath: /homework
+              name: www-volume
+          command: [ "busybox" ]
+          args: [ "httpd" , "-f",  "-p", "8000", "-h", "/homework" ]
+          readinessProbe:
+            initialDelaySeconds: 12
+            periodSeconds: 10
+            exec:
+              command: ["sh", '-c', 'test -s /homework/index.html']
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh","-c","rm -rf /homework/index.html" ]
+      initContainers:
+        - name: init-myservice
+          image: busybox:1.35
+          command: [ 'sh', '-c', 'echo "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Title</title></head><body>Hello, homework1</body></html>" > /init/index.html' ]
+          volumeMounts:
+            - mountPath: /init
+              name: www-volume
+      volumes:
+        - name: www-volume
+          emptyDir:
+            sizeLimit: 5Mi
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
